@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Horaires des Films</title>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.7.2/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Ajout de Font Awesome pour l'icône de lecture -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .trailer-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            cursor: pointer;
+        }
+
+        .trailer-overlay:hover {
+            opacity: 1;
+        }
+
+        .play-icon {
+            color: white;
+            font-size: 3rem;
+            transition: transform 0.2s ease;
+        }
+
+        .trailer-overlay:hover .play-icon {
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container mx-auto p-4">
+        <h1 class="text-4xl font-bold text-center mb-4">Horaires des Films</h1>
+        
+        <div class="text-center mb-8 text-lg">
+            Dernière mise à jour : <span class="font-semibold">{{ scraping_date }}</span>
+        </div>
+
+        <div class="flex flex-col gap-4 max-w-4xl mx-auto mb-8">
+            <div class="form-control w-full">
+                <input type="text" id="searchInput" placeholder="Rechercher un film..." class="input input-bordered w-full" />
+            </div>
+
+            <div class="flex flex-col gap-2">
+                <h3 class="font-semibold">Filtrer par genre :</h3>
+                <div id="genreFilters" class="flex flex-wrap gap-2">
+                    {% set genres = [] %}
+                    {% for movie in movies %}
+                        {% for genre in movie.genres %}
+                            {% if genre not in genres %}
+                                {% set _ = genres.append(genre) %}
+                            {% endif %}
+                        {% endfor %}
+                    {% endfor %}
+                    
+                    {% for genre in genres|sort %}
+                    <button class="btn btn-sm" data-genre="{{ genre }}">{{ genre }}</button>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="moviesGrid">
+            {% for movie in movies %}
+            <div class="card bg-base-100 shadow-xl">
+                {% if movie.image_url %}
+                <figure class="relative">
+                    <img src="{{ movie.image_url }}" alt="{{ movie.title }}" class="w-full h-64 object-cover"/>
+                    <div class="trailer-overlay" onclick="openTrailer('{{ movie.title }}')">
+                        <i class="fa-solid fa-play play-icon"></i>
+                    </div>
+                </figure>
+                {% endif %}
+                <div class="card-body">
+                    <h2 class="card-title">{{ movie.title }}</h2>
+                    <div class="flex flex-wrap gap-2 my-2">
+                        {% if movie.duration %}
+                        <div class="badge badge-neutral">{{ movie.duration }}</div>
+                        {% endif %}
+                        {% if movie.version %}
+                        <div class="badge badge-ghost">{{ movie.version }}</div>
+                        {% endif %}
+                        {% if movie.format %}
+                        <div class="badge badge-ghost">{{ movie.format }}</div>
+                        {% endif %}
+                        {% for genre in movie.genres %}
+                        <div class="badge badge-neutral">{{ genre }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="text-sm line-clamp-3">{{ movie.synopsis }}</div>
+                    
+                    <div class="mt-4">
+                        <h3 class="font-bold mb-2">Séances du jour</h3>
+                        {% for cinema in movie.schedules[0].cinemas %}
+                            <div class="mb-2">
+                                <p class="font-semibold">{{ cinema.cinema_name }}</p>
+                                <div class="flex flex-wrap gap-2">
+                                    {% for time in cinema.times %}
+                                    <span class="badge">{{ time }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="card-actions justify-end mt-auto">
+                        <label for="modal-{{ loop.index }}" class="btn btn-primary">Voir plus</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal -->
+            <input type="checkbox" id="modal-{{ loop.index }}" class="modal-toggle" />
+            <div class="modal">
+                <div class="modal-box max-w-5xl">
+                    <div class="flex flex-col md:flex-row items-start gap-6">
+                        {% if movie.image_url %}
+                        <img src="{{ movie.image_url }}" alt="{{ movie.title }}" class="w-full md:w-1/3 rounded-lg object-cover"/>
+                        {% endif %}
+                        <div class="flex-1">
+                            <h3 class="font-bold text-2xl">{{ movie.title }}</h3>
+                            <div class="flex flex-wrap gap-2 my-2">
+                                {% if movie.duration %}
+                                <div class="badge badge-neutral">{{ movie.duration }}</div>
+                                {% endif %}
+                                {% if movie.version %}
+                                <div class="badge badge-ghost">{{ movie.version }}</div>
+                                {% endif %}
+                                {% if movie.format %}
+                                <div class="badge badge-ghost">{{ movie.format }}</div>
+                                {% endif %}
+                                {% for genre in movie.genres %}
+                                <div class="badge badge-neutral">{{ genre }}</div>
+                                {% endfor %}
+                            </div>
+                            <p class="py-4">{{ movie.synopsis }}</p>
+                        </div>
+                    </div>
+
+                    <div class="divider">Horaires complets</div>
+
+                    <div class="mt-4">
+                        {% for schedule in movie.schedules %}
+                        <div class="mb-6">
+                            <h4 class="font-bold text-lg mb-3">{{ schedule.date|strftime("%d %B %Y")|replace("January", "janvier")|replace("February", "février")|replace("March", "mars")|replace("April", "avril")|replace("May", "mai")|replace("June", "juin")|replace("July", "juillet")|replace("August", "août")|replace("September", "septembre")|replace("October", "octobre")|replace("November", "novembre")|replace("December", "décembre") }}</h4>
+                            {% for cinema in schedule.cinemas %}
+                            <div class="mb-4 pl-4">
+                                <h5 class="font-semibold">{{ cinema.cinema_name }}</h5>
+                                <div class="flex flex-wrap gap-2 mt-2">
+                                    {% for time in cinema.times %}
+                                    <span class="badge">{{ time }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="modal-action">
+                        <label for="modal-{{ loop.index }}" class="btn">Fermer</label>
+                    </div>
+                </div>
+                <label class="modal-backdrop" for="modal-{{ loop.index }}">Fermer</label>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script>
+        // État des filtres
+        let selectedGenres = new Set();
+        const searchInput = document.getElementById('searchInput');
+        const genreButtons = document.querySelectorAll('[data-genre]');
+
+        // Fonction pour ouvrir le trailer sur YouTube
+        function openTrailer(movieTitle) {
+            const searchQuery = encodeURIComponent(`${movieTitle} bande annonce trailer`);
+            const youtubeUrl = `https://www.youtube.com/results?search_query=${searchQuery}`;
+            window.open(youtubeUrl, '_blank');
+        }
+
+        // Gestion des boutons de genre
+        genreButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const genre = button.dataset.genre;
+                if (selectedGenres.has(genre)) {
+                    selectedGenres.delete(genre);
+                    button.classList.remove('btn-primary');
+                } else {
+                    selectedGenres.add(genre);
+                    button.classList.add('btn-primary');
+                }
+                filterMovies();
+            });
+        });
+
+        // Gestion de la recherche
+        searchInput.addEventListener('input', filterMovies);
+
+        function filterMovies() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const movieCards = document.querySelectorAll('.card');
+            
+            movieCards.forEach(card => {
+                const title = card.querySelector('.card-title').textContent.toLowerCase();
+                const genres = Array.from(card.querySelectorAll('.badge')).map(badge => badge.textContent);
+                
+                const matchesSearch = title.includes(searchTerm);
+                const matchesGenres = selectedGenres.size === 0 || 
+                    genres.some(genre => selectedGenres.has(genre));
+                
+                const shouldShow = matchesSearch && matchesGenres;
+                card.style.display = shouldShow ? 'flex' : 'none';
+                
+                // Aussi cacher/montrer le modal associé
+                const modalId = card.nextElementSibling.id;
+                document.getElementById(modalId).style.display = shouldShow ? 'block' : 'none';
+            });
+        }
+    </script>
+</body>
+</html> 

@@ -1,0 +1,11 @@
+---
+description: Stack pour le projet web
+globs: 
+---
+## Backend
+Flask pour les vues qui retournent les données JSON.
+
+## Frontend
+DaisyUI pour les composants d'interface
+Les templates Flask
+JavaScript pour les interactions
