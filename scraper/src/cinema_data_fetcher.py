@@ -1,7 +1,7 @@
 import logging
-from models import MovieMetadata, Session, Cinema, Schedule, Movie, ExportData
-from session_manager import SessionManager
-from date_utils import convert_portuguese_date
+from .models import MovieMetadata, Session, Cinema, Schedule, Movie, ExportData
+from .session_manager import SessionManager
+from .date_utils import convert_portuguese_date
 
 logger = logging.getLogger(__name__)
 

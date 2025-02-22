@@ -1,14 +1,13 @@
 import argparse
-import json
 import logging
 from logging.handlers import RotatingFileHandler
 import os
 from datetime import datetime
 from dotenv import load_dotenv                         
 from dataclasses import asdict                            
-from session_manager import SessionManager                    
-from cinema_data_fetcher import NOSCinemaDataFetcher
-from export_manager import ExportManager
+from .session_manager import SessionManager                    
+from .cinema_data_fetcher import NOSCinemaDataFetcher
+from .export_manager import ExportManager
 
 def setup_logging():
     """Configure le système de logging avec rotation des fichiers.

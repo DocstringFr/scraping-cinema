@@ -3,20 +3,27 @@ import logging
 import os
 from datetime import datetime
 from dataclasses import asdict
-from models import ExportData
+from .models import ExportData
 
 logger = logging.getLogger(__name__)
 
 class ExportManager:
     """Gère l'export des données dans différents formats."""
     
-    def __init__(self, output_dir: str = "."):
+    def __init__(self, output_dir: str = None):
         """Initialise le gestionnaire d'export.
         
         Args:
-            output_dir (str): Répertoire de sortie pour les fichiers exportés
+            output_dir (str): Répertoire de sortie pour les fichiers exportés.
+                            Si non fourni, utilise le dossier 'data' à la racine du projet.
         """
-        self.output_dir = output_dir
+        if output_dir is None:
+            # Définir le dossier 'data' à la racine du projet comme dossier par défaut
+            root_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+            self.output_dir = os.path.join(root_dir, 'data')
+        else:
+            self.output_dir = output_dir
+        
         self._ensure_output_dir_exists()
     
     def _ensure_output_dir_exists(self):
